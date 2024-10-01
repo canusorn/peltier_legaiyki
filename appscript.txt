@@ -5,7 +5,7 @@ function doGet(e) {
     result = 'No Parameters';
   }
   else {
-    var sheet_id = '14LHVmk5Gu93MbIzgssJ9coeWvOL4kRC3kJlrpJYgdRQ'; // Spreadsheet ID
+    var sheet_id = '1GWNRaBXBOaTCnTNVqPsNRK1poH5F3WBSyi6AAvnQn04'; // Spreadsheet ID
     var sheet = SpreadsheetApp.openById(sheet_id).getActiveSheet();
     var newRow = sheet.getLastRow() + 1;
     var rowData = [];
@@ -32,6 +32,10 @@ function doGet(e) {
           break;
         case 'temp4':
           rowData[5] = value; // Humidity in column F
+          result += ' ,Temp4 Written on column F';
+          break;        
+		case 'volt':
+          rowData[6] = value; // Voltage in column G
           result += ' ,Temp4 Written on column F';
           break;
         default:
