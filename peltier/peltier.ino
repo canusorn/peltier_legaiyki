@@ -1,7 +1,7 @@
 /*
 
-    SPI   MOSI    MISO    CLK     CS
-   VSPI  GPIO23  GPIO19  GPIO18  GPIO5
+   SPI      SO     CLK
+   SPI    GPIO19  GPIO18
 */
 
 
@@ -9,8 +9,8 @@
 #define VOLT_PIN 34   /// 0-4095
 #define HEATTER_PIN 13
 #define HEATTER_CONTROL 4
-#define HEATTER_TEMP 39  
-#define GSHEETUPDATE 30   // update in second
+#define HEATTER_TEMP 35
+#define GSHEETUPDATE 60   // update in second
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -41,8 +41,7 @@ MAX6675 ThermoCouples[ThermoCouplesNum] =
   MAX6675(27, &SPI),   //  HW SPI
 };
 
-unsigned long previousMillis = 0;        // will store last time LED was updated
-uint16_t gsheetInterval;
+unsigned long previousMillis = 0, previousGsheet;       // will store last time LED was updated
 float temp[4], volt;
 
 void setup()
@@ -72,16 +71,22 @@ void loop()
   if (currentMillis - previousMillis >= 1000) {
     previousMillis = currentMillis;
 
-    gsheetInterval++;
+    uint8_t error = 0;
     volt = 0;
     for (int THCnumber = 0; THCnumber < ThermoCouplesNum; THCnumber++)
     {
       int status = ThermoCouples[THCnumber].read();
-      Serial.print("Status" + String(status));
+      error += status;
+
       float t = ThermoCouples[THCnumber].getTemperature();
-      temp[THCnumber] = t;
-      Serial.print("\ttemp" + String(THCnumber + 1) + ": ");
-      Serial.println(t);
+      if (!status) {
+        temp[THCnumber] = t;
+        Serial.print("Temperature" + String(THCnumber + 1) + ": ");
+        Serial.println(t);
+      } else {
+        Serial.println("Temp" + String(THCnumber + 1) + "error:" + String(status));
+      }
+
       volt += analogRead(VOLT_PIN);
 
       delay(100);  //  time to flush all Serial stuff
@@ -90,24 +95,28 @@ void loop()
     volt = volt / ThermoCouplesNum;
     Serial.println("Volt:" + String(volt));
 
-    if (temp[HEATTER_CONTROL - 1] > HEATTER_TEMP) {
-      if(digitalRead(HEATTER_PIN) == LOW) Serial.println("heater on");
-      digitalWrite(HEATTER_PIN, HIGH );
-    } else if (temp[HEATTER_CONTROL - 1] < HEATTER_TEMP - 1) {
-      if(digitalRead(HEATTER_PIN) == HIGH) Serial.println("heater off");
-      digitalWrite(HEATTER_PIN, LOW);
+    if (!error) {
+      if (temp[HEATTER_CONTROL - 1] > HEATTER_TEMP) {
+        if (digitalRead(HEATTER_PIN) == LOW) Serial.println("heater on");
+        digitalWrite(HEATTER_PIN, HIGH );
+      } else if (temp[HEATTER_CONTROL - 1] < HEATTER_TEMP - 1) {
+        if (digitalRead(HEATTER_PIN) == HIGH) Serial.println("heater off");
+        digitalWrite(HEATTER_PIN, LOW);
+      }
     }
 
-    Serial.println("------------------");
 
-    Blynk.virtualWrite(V0, temp[0]);
-    Blynk.virtualWrite(V1, temp[1]);
-    Blynk.virtualWrite(V2, temp[2]);
-    Blynk.virtualWrite(V3, temp[3]);
+    Serial.println("------------------");
+    if (!error) {
+      Blynk.virtualWrite(V0, temp[0]);
+      Blynk.virtualWrite(V1, temp[1]);
+      Blynk.virtualWrite(V2, temp[2]);
+      Blynk.virtualWrite(V3, temp[3]);
+    }
     Blynk.virtualWrite(V4, volt);
 
-    if (gsheetInterval >= GSHEETUPDATE) {
-      gsheetInterval = 0;
+    if (currentMillis - previousGsheet >= GSHEETUPDATE * 1000) {
+      previousGsheet = currentMillis;
       Serial.println("gsheet update");
       gsheet();
     }
