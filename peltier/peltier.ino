@@ -129,7 +129,7 @@ void gsheet() {
 
   HTTPClient https;
 
-  String serverURL = "https://script.google.com/macros/s/AKfycby8GBnsweci9Yd0INXaivmouKPz0BsxRJXUKucj1Oq8feIyDGniExQO8AU8QVirU82a/exec";
+  String serverURL = "https://script.google.com/macros/s/AKfycbx_aDuA3ACO2HCGtyKPUSAldk_69eArUkAhw-jow6Yj0g41fBfZPJivrP4fbf0rDOjHrA/exec";
   serverURL += "?temp1=" + String(temp[0]);
   serverURL += "&temp2=" + String(temp[1]);
   serverURL += "&temp3=" + String(temp[2]);
