@@ -1,16 +1,23 @@
 /*
-
-   SPI      SO     CLK
-   SPI    GPIO19  GPIO18
+https://github.com/canusorn/peltier_legaiyki
 */
 
+#define HEATTER_CONTROL 4   // temp sensor ตัวที่ต้องการควบคุม heater
+#define HEATTER_TEMP 35     // temp ที่ต้องการให้ heater ตัดการทำงาน
+#define GSHEETUPDATE 60   // เวลา update ขึ้น gsheet [sec]
 
+#define HEATTER_PIN 13     // pin ต่อ relay ควบคุม heater
+#define VOLT_PIN 34        // pin ต่อ volt ของ peltier   0-4095
 
-#define VOLT_PIN 34   /// 0-4095
-#define HEATTER_PIN 13
-#define HEATTER_CONTROL 4
-#define HEATTER_TEMP 35
-#define GSHEETUPDATE 60   // update in second
+//  pin สำหรับ temp sensor 1-4
+#define CS_PIN_1 33
+#define CS_PIN_2 25
+#define CS_PIN_3 26
+#define CS_PIN_4 27
+
+// ใส่ชื่อ และรหัสผ่าน wifi ที่ต้องการเชื่อมต่อ
+char ssid[] = "G6PD";
+char pass[] = "570610193";
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -27,18 +34,13 @@
 #include <BlynkSimpleEsp32.h>
 #include "MAX6675.h"
 
-// Your WiFi credentials.
-// Set password to "" for open networks.
-char ssid[] = "G6PD";
-char pass[] = "570610193";
-
 const int ThermoCouplesNum = 4;
 MAX6675 ThermoCouples[ThermoCouplesNum] =
 {
-  MAX6675(33, &SPI),   //  HW SPI
-  MAX6675(25, &SPI),   //  HW SPI
-  MAX6675(26, &SPI),   //  HW SPI
-  MAX6675(27, &SPI),   //  HW SPI
+  MAX6675(CS_PIN_1, &SPI),   //  HW SPI
+  MAX6675(CS_PIN_2, &SPI),   //  HW SPI
+  MAX6675(CS_PIN_3, &SPI),   //  HW SPI
+  MAX6675(CS_PIN_4, &SPI),   //  HW SPI
 };
 
 unsigned long previousMillis = 0, previousGsheet;       // will store last time LED was updated
@@ -78,6 +80,7 @@ void loop()
       int status = ThermoCouples[THCnumber].read();
       error += status;
 
+      // อ่านค่าจาก temp sensor
       float t = ThermoCouples[THCnumber].getTemperature();
       if (!status) {
         temp[THCnumber] = t;
@@ -87,14 +90,17 @@ void loop()
         Serial.println("Temp" + String(THCnumber + 1) + "error:" + String(status));
       }
 
+      // อ่านค่าแรงดันจาก adc นำมาบวกหาค่าเฉลี่ย
       volt += analogRead(VOLT_PIN);
 
       delay(100);  //  time to flush all Serial stuff
     }
 
+    // หาค่าเฉลี่ย peltier volt
     volt = volt / ThermoCouplesNum;
     Serial.println("Volt:" + String(volt));
 
+    // ส่วนควบคุมการทำงาน heater
     if (!error) {
       if (temp[HEATTER_CONTROL - 1] > HEATTER_TEMP) {
         if (digitalRead(HEATTER_PIN) == LOW) Serial.println("heater on");
@@ -105,8 +111,9 @@ void loop()
       }
     }
 
-
     Serial.println("------------------");
+
+    // update ค่าขึ้น blynk
     if (!error) {
       Blynk.virtualWrite(V0, temp[0]);
       Blynk.virtualWrite(V1, temp[1]);
@@ -115,6 +122,7 @@ void loop()
     }
     Blynk.virtualWrite(V4, volt);
 
+    // อัพเดทค่าขึ้น google sheet
     if (currentMillis - previousGsheet >= GSHEETUPDATE * 1000) {
       previousGsheet = currentMillis;
       Serial.println("gsheet update");
