@@ -2,11 +2,11 @@
 ## การตั้งค่าโค้ด
 
  - เซนเซอร์อุณหภูมิที่ควบคุม relay heater [ตัวอย่างใช้เซนเซอร์ตัวที่4ควบคุม Heater] ได้ที่
-  `#define HEATTER_CONTROL 4   // temp sensor ตัวที่ต้องการควบคุม heater`
+  `#define HEATTER_CONTROL 4`
   - กำหนดอุณหภูมิที่ต้องการ ได้ที่
-  `#define HEATTER_TEMP 35     // temp ที่ต้องการให้ heater ตัดการทำงาน`
+  `#define HEATTER_TEMP 35`
  - กำหนดเวลาที่ต้องการอัพเดทค่าขึ้น google sheet หน่วยเป็นวินาที ได้ที่
-  `#define GSHEETUPDATE 60   // เวลา update ขึ้น gsheet [sec]`
+  `#define GSHEETUPDATE 60`
   - ใส่ชื่อไวไฟและรหัสผ่านได้ที่
    `char ssid[] = "ssid";`
 `char pass[] = "pass";`
