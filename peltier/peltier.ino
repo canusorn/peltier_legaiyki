@@ -19,6 +19,9 @@ https://github.com/canusorn/peltier_legaiyki
 char ssid[] = "G6PD";
 char pass[] = "570610193";
 
+// ลิ้งของ google sheet
+String gsheet_url = "https://script.google.com/macros/s/AKfycbx_aDuA3ACO2HCGtyKPUSAldk_69eArUkAhw-jow6Yj0g41fBfZPJivrP4fbf0rDOjHrA/exec";
+
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
 
@@ -137,7 +140,7 @@ void gsheet() {
 
   HTTPClient https;
 
-  String serverURL = "https://script.google.com/macros/s/AKfycbx_aDuA3ACO2HCGtyKPUSAldk_69eArUkAhw-jow6Yj0g41fBfZPJivrP4fbf0rDOjHrA/exec";
+  String serverURL = gsheet_url;
   serverURL += "?temp1=" + String(temp[0]);
   serverURL += "&temp2=" + String(temp[1]);
   serverURL += "&temp3=" + String(temp[2]);
