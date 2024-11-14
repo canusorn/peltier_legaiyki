@@ -151,9 +151,9 @@ void gsheet() {
   serverURL += "&temp3=" + String(temp[2]);
   serverURL += "&temp4=" + String(temp[3]);
   serverURL += "&volt=" + String(volt);
-  serverURL += "&r=" + String(1.8);
   serverURL += "&s=" + String(volt/(abs(temp[TEMP1_S-1] - temp[TEMP2_S-1])));
-//
+  serverURL += "&r=" + String(1.8);
+
   if (https.begin(client, serverURL)) { // Start the connection
     int httpCode = https.GET(); // Make a GET request
 
