@@ -1,10 +1,14 @@
 /*
-https://github.com/canusorn/peltier_legaiyki
+  https://github.com/canusorn/peltier_legaiyki
 */
 
 #define HEATTER_CONTROL 4   // temp sensor ตัวที่ต้องการควบคุม heater
 #define HEATTER_TEMP 35     // temp ที่ต้องการให้ heater ตัดการทำงาน
 #define GSHEETUPDATE 60   // เวลา update ขึ้น gsheet [sec]
+
+// อุณหภูมิที่คำนวณ S
+#define TEMP1_S 2
+#define TEMP2_S 3
 
 #define HEATTER_PIN 13     // pin ต่อ relay ควบคุม heater
 #define VOLT_PIN 34        // pin ต่อ volt ของ peltier   0-4095
@@ -16,11 +20,11 @@ https://github.com/canusorn/peltier_legaiyki
 #define CS_PIN_4 27
 
 // ใส่ชื่อ และรหัสผ่าน wifi ที่ต้องการเชื่อมต่อ
-char ssid[] = "G6PD";
-char pass[] = "570610193";
+char ssid[] = "WARAMET.J_2.4G";
+char pass[] = "0967289141t";
 
 // ลิ้งของ google sheet
-String gsheet_url = "https://script.google.com/macros/s/AKfycbx_aDuA3ACO2HCGtyKPUSAldk_69eArUkAhw-jow6Yj0g41fBfZPJivrP4fbf0rDOjHrA/exec";
+String gsheet_url = "https://script.google.com/macros/s/AKfycbwSdXorMo-fpIbu1VsOgLwU2U8OUW-1ZdnTy_8nkuPBOagK0U-L2KdvKjv66qFaBWT0vQ/exec";
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -101,6 +105,7 @@ void loop()
 
     // หาค่าเฉลี่ย peltier volt
     volt = volt / ThermoCouplesNum;
+    volt = volt * 1;
     Serial.println("Volt:" + String(volt));
 
     // ส่วนควบคุมการทำงาน heater
@@ -146,7 +151,9 @@ void gsheet() {
   serverURL += "&temp3=" + String(temp[2]);
   serverURL += "&temp4=" + String(temp[3]);
   serverURL += "&volt=" + String(volt);
-
+  serverURL += "&r=" + String(1.8);
+  serverURL += "&s=" + String(volt/(abs(temp[TEMP1_S-1] - temp[TEMP2_S-1])));
+//
   if (https.begin(client, serverURL)) { // Start the connection
     int httpCode = https.GET(); // Make a GET request
 
