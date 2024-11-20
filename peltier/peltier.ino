@@ -105,7 +105,7 @@ void loop()
 
     // หาค่าเฉลี่ย peltier volt
     volt = volt / ThermoCouplesNum;
-    volt = volt * 1;
+    volt = volt / 1142.8;
     Serial.println("Volt:" + String(volt));
 
     // ส่วนควบคุมการทำงาน heater
