@@ -5,7 +5,7 @@ function doGet(e) {
     result = 'No Parameters';
   }
   else {
-    var sheet_id = '1GWNRaBXBOaTCnTNVqPsNRK1poH5F3WBSyi6AAvnQn04'; // Spreadsheet ID
+    var sheet_id = '1mjwaTeazQa505kY3QTGLvBtr4Ce23KkyFkpyIDy0UGw'; // Spreadsheet ID
     var sheet = SpreadsheetApp.openById(sheet_id).getActiveSheet();
     var newRow = sheet.getLastRow() + 1;
     var rowData = [];
@@ -35,15 +35,15 @@ function doGet(e) {
           result += ' ,Temp4 Written on column F';
           break;        
 	case 'volt':
-          rowData[7] = value; // Voltage in column G
+          rowData[6] = value; // Voltage in column G
           result += ' ,volt Written on column G';
           break;
 	case 'curr':
-          rowData[8] = value; // curr in column H
+          rowData[7] = value; // curr in column H
           result += ' ,volt Written on column H';
           break;
 	case 'resis':
-          rowData[9] = value; // Voltage in column I
+          rowData[8] = value; // Voltage in column I
           result += ' ,volt Written on column I';
           break;
         default:

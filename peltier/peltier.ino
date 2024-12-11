@@ -19,7 +19,7 @@ char *ssid = "WARAMET.J_2.4G";
 char *pass = "0967289141t";
 
 // ลิ้งของ google sheet
-String gsheet_url = "https://script.google.com/macros/s/AKfycbwSdXorMo-fpIbu1VsOgLwU2U8OUW-1ZdnTy_8nkuPBOagK0U-L2KdvKjv66qFaBWT0vQ/exec";
+String gsheet_url = "https://script.google.com/macros/s/AKfycby8wfkzhUpx3kPQieQmcQxf3LB3oUCKd6tFjBQEvapaVKToHtKyi6J5aLbg94263iF0zw/exec";
 
 
 #include <WiFi.h>
@@ -122,7 +122,8 @@ void gsheet() {
   serverURL += "&temp4=" + String(temp[3], 0);
   serverURL += "&volt=" + String(volt, 2);
   serverURL += "&curr=" + String(curr, 3);
-  serverURL += "&resis=" + String(RLOAD, 0);
+  serverURL += "&resis=" + String(RLOAD);
+//  Serial.println(serverURL);
 
   if (https.begin(client, serverURL)) { // Start the connection
     int httpCode = https.GET(); // Make a GET request
