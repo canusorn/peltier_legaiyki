@@ -34,9 +34,17 @@ function doGet(e) {
           rowData[5] = value; // Humidity in column F
           result += ' ,Temp4 Written on column F';
           break;        
-		case 'volt':
-          rowData[6] = value; // Voltage in column G
-          result += ' ,Temp4 Written on column F';
+	case 'volt':
+          rowData[7] = value; // Voltage in column G
+          result += ' ,volt Written on column G';
+          break;
+	case 'curr':
+          rowData[8] = value; // curr in column H
+          result += ' ,volt Written on column H';
+          break;
+	case 'resis':
+          rowData[9] = value; // Voltage in column I
+          result += ' ,volt Written on column I';
           break;
         default:
           result = "unsupported parameter";

@@ -2,134 +2,103 @@
   https://github.com/canusorn/peltier_legaiyki
 */
 
-#define HEATTER_CONTROL 4   // temp sensor ตัวที่ต้องการควบคุม heater
-#define HEATTER_TEMP 35     // temp ที่ต้องการให้ heater ตัดการทำงาน
 #define GSHEETUPDATE 60   // เวลา update ขึ้น gsheet [sec]
 
-// อุณหภูมิที่คำนวณ S
-#define TEMP1_S 2
-#define TEMP2_S 3
-
-#define HEATTER_PIN 13     // pin ต่อ relay ควบคุม heater
-#define VOLT_PIN 34        // pin ต่อ volt ของ peltier   0-4095
+#define VOLT_PIN 32        // pin ต่อ volt ของ peltier   0-4095
+#define SAMPLE 50.0
+#define RLOAD 22
 
 //  pin สำหรับ temp sensor 1-4
-#define CS_PIN_1 33
-#define CS_PIN_2 25
-#define CS_PIN_3 26
-#define CS_PIN_4 27
+#define TEMP_PIN_1 36
+#define TEMP_PIN_2 39
+#define TEMP_PIN_3 34
+#define TEMP_PIN_4 35
 
 // ใส่ชื่อ และรหัสผ่าน wifi ที่ต้องการเชื่อมต่อ
-char ssid[] = "WARAMET.J_2.4G";
-char pass[] = "0967289141t";
+char *ssid = "WARAMET.J_2.4G";
+char *pass = "0967289141t";
 
 // ลิ้งของ google sheet
 String gsheet_url = "https://script.google.com/macros/s/AKfycbwSdXorMo-fpIbu1VsOgLwU2U8OUW-1ZdnTy_8nkuPBOagK0U-L2KdvKjv66qFaBWT0vQ/exec";
 
-/* Comment this out to disable prints and save space */
-#define BLYNK_PRINT Serial
-
-/* Fill in information from Blynk Device Info here */
-#define BLYNK_TEMPLATE_ID "TMPL6q23KVn0a"
-#define BLYNK_TEMPLATE_NAME "petier"
-#define BLYNK_AUTH_TOKEN "qkzrSj-Iuyv-7eEddbtGUn6ZZMFGVZWV"
 
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
-#include <BlynkSimpleEsp32.h>
-#include "MAX6675.h"
 
-const int ThermoCouplesNum = 4;
-MAX6675 ThermoCouples[ThermoCouplesNum] =
-{
-  MAX6675(CS_PIN_1, &SPI),   //  HW SPI
-  MAX6675(CS_PIN_2, &SPI),   //  HW SPI
-  MAX6675(CS_PIN_3, &SPI),   //  HW SPI
-  MAX6675(CS_PIN_4, &SPI),   //  HW SPI
-};
 
 unsigned long previousMillis = 0, previousGsheet;       // will store last time LED was updated
-float temp[4], volt;
+float temp[4], volt, curr;
 
 void setup()
 {
   Serial.begin(115200);
 
-  digitalWrite(HEATTER_PIN, HIGH);
-  pinMode(HEATTER_PIN, OUTPUT);
+  Serial.println();
+  Serial.println("******************************************************");
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
 
-  SPI.begin();
+  WiFi.begin(ssid, pass);
 
-  for (int i = 0; i < ThermoCouplesNum; i++)
-  {
-    ThermoCouples[i].begin();
-    ThermoCouples[i].setSPIspeed(1000000);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
 
-  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
 
 void loop()
 {
-  Blynk.run();
 
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= 1000) {
     previousMillis = currentMillis;
 
-    uint8_t error = 0;
     volt = 0;
-    for (int THCnumber = 0; THCnumber < ThermoCouplesNum; THCnumber++)
+    float Read[4];
+    for (int i = 0; i < SAMPLE ; i++)
     {
-      int status = ThermoCouples[THCnumber].read();
-      error += status;
-
-      // อ่านค่าจาก temp sensor
-      float t = ThermoCouples[THCnumber].getTemperature();
-      if (!status) {
-        temp[THCnumber] = t;
-        Serial.print("Temperature" + String(THCnumber + 1) + ": ");
-        Serial.println(t);
-      } else {
-        Serial.println("Temp" + String(THCnumber + 1) + "error:" + String(status));
-      }
 
       // อ่านค่าแรงดันจาก adc นำมาบวกหาค่าเฉลี่ย
       volt += analogRead(VOLT_PIN);
+      Read[0] += analogRead(TEMP_PIN_1);
+      Read[1] += analogRead(TEMP_PIN_2);
+      Read[2] += analogRead(TEMP_PIN_3);
+      Read[3] += analogRead(TEMP_PIN_4);
 
-      delay(100);  //  time to flush all Serial stuff
+      delay(10);  //  time to flush all Serial stuff
+    }
+
+    for (int i = 0; i < 4 ; i++)
+    {
+      float Vr, Rt, ln, T0 = 25 + 273.15;
+      Read[i] /= SAMPLE;
+      Read[i] = (3.3 / 4095.0) * Read[i];
+      Vr = 3.3 - Read[i];
+      Rt = Read[i] / (Vr / 6300);
+      ln = log(Rt / 10000);
+      temp[i] = (1 / ((ln / 3950) + (1 / T0)));
+      temp[i] = temp[i] - 273.15;
+      temp[i] = temp[i] * 1.3 + 32; // calibrate
+      Serial.println("Temp" + String(i) + ": " + String(temp[i], 1));
     }
 
     // หาค่าเฉลี่ย peltier volt
-    volt = volt / ThermoCouplesNum;
-    Serial.print("analog:" + String(volt));
-    volt = volt / 1142.8;
-    Serial.println("\tVolt:" + String(volt));
+    volt = volt / SAMPLE;
+    //    Serial.print("analog:" + String(volt));
+    volt = volt / 4095.0 * 3.3 * 1.18;
+    curr = volt / RLOAD;
 
-    // ส่วนควบคุมการทำงาน heater
-    if (!error) {
-      if (temp[HEATTER_CONTROL - 1] > HEATTER_TEMP) {
-        if (digitalRead(HEATTER_PIN) == LOW) Serial.println("heater on");
-        digitalWrite(HEATTER_PIN, HIGH );
-      } else if (temp[HEATTER_CONTROL - 1] < HEATTER_TEMP - 1) {
-        if (digitalRead(HEATTER_PIN) == HIGH) Serial.println("heater off");
-        digitalWrite(HEATTER_PIN, LOW);
-      }
-    }
+    Serial.println("Volt:" + String(volt) + "V\tCurr:" + String(curr, 3) + "A");
 
     Serial.println("------------------");
-
-    // update ค่าขึ้น blynk
-    if (!error) {
-      Blynk.virtualWrite(V0, temp[0]);
-      Blynk.virtualWrite(V1, temp[1]);
-      Blynk.virtualWrite(V2, temp[2]);
-      Blynk.virtualWrite(V3, temp[3]);
-    }
-    Blynk.virtualWrite(V4, volt);
 
     // อัพเดทค่าขึ้น google sheet
     if (currentMillis - previousGsheet >= GSHEETUPDATE * 1000) {
@@ -147,13 +116,13 @@ void gsheet() {
   HTTPClient https;
 
   String serverURL = gsheet_url;
-  serverURL += "?temp1=" + String(temp[0]);
-  serverURL += "&temp2=" + String(temp[1]);
-  serverURL += "&temp3=" + String(temp[2]);
-  serverURL += "&temp4=" + String(temp[3]);
-  serverURL += "&volt=" + String(volt);
-  serverURL += "&s=" + String(volt/(abs(temp[TEMP1_S-1] - temp[TEMP2_S-1])));
-  serverURL += "&r=" + String(1.8);
+  serverURL += "?temp1=" + String(temp[0], 0);
+  serverURL += "&temp2=" + String(temp[1], 0);
+  serverURL += "&temp3=" + String(temp[2], 0);
+  serverURL += "&temp4=" + String(temp[3], 0);
+  serverURL += "&volt=" + String(volt, 2);
+  serverURL += "&curr=" + String(curr, 3);
+  serverURL += "&resis=" + String(RLOAD, 0);
 
   if (https.begin(client, serverURL)) { // Start the connection
     int httpCode = https.GET(); // Make a GET request
